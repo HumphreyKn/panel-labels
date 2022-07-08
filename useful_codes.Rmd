@@ -2,22 +2,25 @@
 title: "Important codes"
 author: "Humphrey"
 date: "2022-07-07"
-output: pdf_document
+output:
+  html_document:
+    df_print: paged
+  pdf_document: default
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(echo = TRUE, message = F, warning = F)
 ```
 
 ## Learn `group_by` from the dplyr package
 
-group_by() allows us to group on a categorical column.
+-   `group_by()` allows us to group on a categorical column.
 
-I count() the presence of automobile classes by manufacturer.
+-   I `count()` the presence of automobile classes by manufacturer.
 
-Then ungroup() to remove any leftover groups. 
+-   Then `ungroup()` to remove any leftover groups.
 
-And voila, I now have counts by mfger + class.
+-   And now have counts by manufacturer + class.
 
 ```{r}
 library(dplyr)
@@ -36,13 +39,13 @@ mpg %>%
   count(manufacturer, class, name = "n")
 ```
 
-## Learn `pivot_wider()` from tidyr
+## Learn `pivot_wider()` from `tidyr`
 
-pivot_wider() is a great function (replaces spread() which I also enjoy using)
+-   `pivot_wider()` is a great function (replaces `spread()` which I also enjoy using)
 
-And we can now make pivot tables that shift our values from the column class into new columns. 
+-   And we can now make pivot tables that shift our values from the column class into new columns.
 
-Super valuable for creating those pivot table reports.
+-   Super valuable for creating those pivot table reports.
 
 ```{r}
 library(tidyr)
@@ -58,11 +61,11 @@ mpg_pivot_table1 <- mpg %>%
 mpg_pivot_table1
 ```
 
-## Learn pivot_longer() from tidyr
+## Learn `pivot_longer()` from `tidyr`
 
-Pivot longer reverses the operation by taking a wide data frame and pivoting it into a long "tidy" format.
+-   Pivot longer reverses the operation by taking a wide data frame and pivoting it into a long "tidy" format.
 
-The "long format" is super important for making visualizations with ggplot2 & doing iteration with purrr::map().
+-   The "long format" is super important for making visualizations with ggplot2 & doing iteration with `purrr::map()`.
 
 ```{r}
 mpg_long_summary_table <- mpg_pivot_table1 %>% 
@@ -73,14 +76,69 @@ mpg_long_summary_table <- mpg_pivot_table1 %>%
   )
 mpg_long_summary_table
 ```
-## Learn how to combine group_by() + summarise() + across()
 
-I love this quick 3-punch combo. ❤️
+## Learn how to combine `group_by()` + `summarise()` + `across()`
 
-group_by() for setting up groups
+-   `group_by()` for setting up groups
 
-summarise() for applying summary functions to each group
+-   `summarise()` for applying summary functions to each group
 
-across() for applying multiple functions to one or more columns
+-   `across()` for applying multiple functions to one or more columns
 
+```{r}
+mpg %>%
+  group_by(class) %>% 
+  summarise(
+    across(cty, .fns = list(mean=mean, stdev=sd)), .groups = "drop"
+  )
+```
 
+## Learn `relocate()` from dplyr
+
+-   `relocate()` allows us to have complete control on how we move columns.
+
+-   I can still use `select()` for this, but when I absolutely need fine control, I switch over to `relocate()`
+
+```{r}
+mpg %>% 
+  relocate(where(is.character), .after = last_col())
+```
+
+## Learn `group_split()` from dplyr
+
+-   I prefer group_split() for splitting data frames that are grouped into a list containing sub-data frames as elements.
+
+    *You'll see why in the next tip.*
+
+**Note** *(Pro-Tip)*: Make sure to convert your grouping column into a factor first, which preserves the order
+
+```{r}
+df_split <- mpg %>% 
+  mutate(manufacturer=as.factor(manufacturer)) %>% 
+  group_by(manufacturer) %>% 
+  group_split()
+df_split[[1]]
+```
+
+### We can now combine `group_split()` with `map()`
+
+-   This is a cool example where I'm splitting the data frame by manufacturer then applying a linear regression model to each data frame.
+
+-   I get a linear reg model for each car manufacturer.
+
+-   print out the linear reg model for the first 2 car manufacturers
+
+```{r}
+library(purrr)
+#library(kableExtra)
+linear_reg_models <- mpg %>% 
+  mutate(manufacturer=as.factor(manufacturer)) %>% 
+  group_by(manufacturer) %>% 
+  group_split() %>% 
+  
+  map(.f=function(df){
+  lm(hwy~cty, data = df)
+}
+  )
+linear_reg_models[c(1:2)]
+```
