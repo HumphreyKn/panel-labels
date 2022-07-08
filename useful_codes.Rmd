@@ -1,0 +1,86 @@
+---
+title: "Important codes"
+author: "Humphrey"
+date: "2022-07-07"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Learn `group_by` from the dplyr package
+
+group_by() allows us to group on a categorical column.
+
+I count() the presence of automobile classes by manufacturer.
+
+Then ungroup() to remove any leftover groups. 
+
+And voila, I now have counts by mfger + class.
+
+```{r}
+library(dplyr)
+library(ggplot2)
+
+mpg %>% 
+  group_by(manufacturer) %>% 
+  count(class, name="n") %>% 
+  ungroup()
+```
+
+### But you can simplify with just `count()`
+
+```{r}
+mpg %>% 
+  count(manufacturer, class, name = "n")
+```
+
+## Learn `pivot_wider()` from tidyr
+
+pivot_wider() is a great function (replaces spread() which I also enjoy using)
+
+And we can now make pivot tables that shift our values from the column class into new columns. 
+
+Super valuable for creating those pivot table reports.
+
+```{r}
+library(tidyr)
+mpg_pivot_table1 <- mpg %>% 
+  group_by(manufacturer) %>% 
+  count(class, name = "n") %>% 
+  ungroup() %>% 
+  pivot_wider(
+    names_from = class,
+    values_from = n,
+    values_fill = 0
+  )
+mpg_pivot_table1
+```
+
+## Learn pivot_longer() from tidyr
+
+Pivot longer reverses the operation by taking a wide data frame and pivoting it into a long "tidy" format.
+
+The "long format" is super important for making visualizations with ggplot2 & doing iteration with purrr::map().
+
+```{r}
+mpg_long_summary_table <- mpg_pivot_table1 %>% 
+  pivot_longer(
+    cols = compact:subcompact,
+    names_to = "class",
+    values_to = "value"
+  )
+mpg_long_summary_table
+```
+## Learn how to combine group_by() + summarise() + across()
+
+I love this quick 3-punch combo. ❤️
+
+group_by() for setting up groups
+
+summarise() for applying summary functions to each group
+
+across() for applying multiple functions to one or more columns
+
+
